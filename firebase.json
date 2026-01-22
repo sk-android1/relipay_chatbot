@@ -1,0 +1,1 @@
+{"flutter":{"platforms":{"android":{"default":{"projectId":"relipay-chatbot","appId":"1:773522074692:android:014c4ef7009a5add2e6011","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"relipay-chatbot","configurations":{"android":"1:773522074692:android:014c4ef7009a5add2e6011","ios":"1:773522074692:ios:ec1b287ec06c40f72e6011"}}}}}}
