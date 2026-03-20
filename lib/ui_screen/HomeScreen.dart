@@ -199,6 +199,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     // TODO: implement initState
     super.initState();
 
+
     WidgetsBinding.instance.addObserver(this);
 
     MyNotificationService notificationService = MyNotificationService();
@@ -283,6 +284,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 var type = filteredUsers[index]['type'].toString();
                 var name = filteredUsers[index]['name'].toString();
 
+                var groupId = filteredUsers[index]['groupId'];
+                var groupName = filteredUsers[index]['name'];
+
+
                 Timestamp? timestamp = lastSeen;
 
                 DateTime? currentTime;
@@ -298,15 +303,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   lastTimeStr = "";
                 }
 
-                return listItem(name, mobileNo, lastTimeStr, () async {
+                return listItem(name, mobileNo, lastTimeStr,type,groupId, () async {
                   String roomId =
                       chatRoomId(auth.currentUser!.displayName ?? '', name);
 
                   var user = filteredUsers[index];
 
                   if (type == "group") {
-                    var groupId = filteredUsers[index]['groupId'];
-                    var groupName = filteredUsers[index]['name'];
                     var memberList = await getGroupMembers(groupId);
 
                     Navigator.push(
@@ -328,7 +331,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
-  Widget listItem(name, email, lastSeen, onclick) {
+  Widget listItem(name, email, lastSeen,userType,groupId, onclick) {
     return InkWell(
       onTap: () {
         onclick();
@@ -348,29 +351,123 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     child: Icon(Icons.person_outline_outlined),
                   ),
                   Container(
+                    width: MediaQuery.of(context).size.width * 0.78,
                     margin: const EdgeInsets.only(left: 10),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          name,
-                          style: const TextStyle(
-                              color: MyColor.black,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500),
-                        ),
-                        Text(
-                          email,
-                          style: const TextStyle(color: MyColor.black),
-                        )
+                       Row(
+                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                         children: [
+                           Container(
+                             width: MediaQuery.of(context).size.width*0.5,
+                             child: Text(
+                               name,
+                               style: const TextStyle(
+                                   color: MyColor.black,
+                                   fontSize: 18,
+                                   fontWeight: FontWeight.w500,),overflow: TextOverflow.ellipsis,
+                             ),
+                           ),
+                           lastMessageTime(name,userType,groupId)
+                         ],
+                       ),
+                        // Text(
+                        //   email,
+                        //   style: const TextStyle(color: MyColor.black),
+                        // )
+                        lastMessage(name,userType,groupId)
                       ],
                     ),
                   ),
                 ],
               ),
-              Text(lastSeen)
+              // Text(lastSeen)
+
             ],
           )),
     );
   }
+
+  Widget lastMessage( opponentUser, userType,groupId){
+   return StreamBuilder(
+        stream: userType == "user"
+            ?fireStore
+            .collection('chatroom')
+            .doc(chatRoomId(auth.currentUser!.displayName ?? '', opponentUser))
+            .collection('chats')
+            .orderBy('time', descending: false)
+            .snapshots()
+            :fireStore
+            .collection('group_chatroom')
+            .doc(groupId)
+            .collection('group_chats')
+            .orderBy('time', descending: false)
+            .snapshots(),
+
+        builder: (context, snapshot) {
+
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return Text("");
+          }
+
+          final data = snapshot.data!.docs.last.data();
+
+          return Container(
+            width: MediaQuery.of(context).size.width * 0.75,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              data['message'],
+              style: const TextStyle(color: MyColor.darkGrey2,),overflow: TextOverflow.ellipsis,
+            ),
+          );
+        });
+  }
+
+  Widget lastMessageTime( opponentUser, userType,groupId){
+    return StreamBuilder(
+        stream: userType == "user"
+            ?fireStore
+            .collection('chatroom')
+            .doc(chatRoomId(auth.currentUser!.displayName ?? '', opponentUser))
+            .collection('chats')
+            .orderBy('time', descending: false)
+            .snapshots()
+            :fireStore
+            .collection('group_chatroom')
+            .doc(groupId)
+            .collection('group_chats')
+            .orderBy('time', descending: false)
+            .snapshots(),
+
+        builder: (context, snapshot) {
+
+
+
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return Text("");
+          }
+
+          final data = snapshot.data!.docs.last.data();
+
+          Timestamp? timestamp =  data['time'];
+
+          DateTime? currentTime;
+          if (timestamp != null) {
+            currentTime = timestamp.toDate();
+          } else {
+            currentTime = DateTime.now(); // fallback if time is missing
+          }
+          String lastTimeStr = formatDateTime2(currentTime);
+
+          return Container(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              lastTimeStr,
+              style: const TextStyle(color: MyColor.black),
+            ),
+          );
+        });
+  }
+
 }

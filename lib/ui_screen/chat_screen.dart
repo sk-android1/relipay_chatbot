@@ -2,12 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:relipay_chatbot/my_utils/my_dialog.dart';
 import 'package:relipay_chatbot/ui_screen/ui_helper/error_helper.dart';
 import 'package:relipay_chatbot/ui_screen/ui_helper/my_color.dart';
-import 'package:relipay_chatbot/ui_screen/ui_helper/my_widget.dart';
-
-import 'HomeScreen.dart';
 
 class ChatScreen extends StatefulWidget {
   final Map<String, dynamic> userMap;
@@ -23,6 +19,12 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
+
+  bool isTopContainer1Visible = true;
+  Set<String> selectedMessageIds = {};
+  bool isSelectionMode = false;
+
+
   TextEditingController etMessage = TextEditingController();
   FirebaseFirestore fireStore = FirebaseFirestore.instance;
   FirebaseAuth auth = FirebaseAuth.instance;
@@ -113,10 +115,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   /////////  chat delete
 
-  Future<void> deleteChatForMe({
-    required String chatRoomId,
-    required String messageId,
-  }) async {
+  Future<void> deleteChatForMe({required String chatRoomId, required String messageId,}) async {
     final uid = auth.currentUser!.uid;
 
     await fireStore
@@ -130,10 +129,7 @@ class _ChatScreenState extends State<ChatScreen> {
     setState(() {});
   }
 
-  Future<void> deleteChatForEveryone({
-    required String chatRoomId,
-    required String messageId,
-  }) async {
+  Future<void> deleteChatForEveryone({required String chatRoomId, required String messageId,}) async {
     await fireStore
         .collection('chatroom')
         .doc(chatRoomId)
@@ -148,7 +144,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
+    final size = MediaQuery
+        .of(context)
+        .size;
 
     return PopScope(
       canPop: false,
@@ -161,74 +159,77 @@ class _ChatScreenState extends State<ChatScreen> {
         backgroundColor: MyColor.lightGrey,
         body: Column(
           children: [
-            Container(
-              margin: const EdgeInsets.only(top: 35),
-              padding: const EdgeInsets.all(10),
-              color: MyColor.white,
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 18,
-                    backgroundColor: MyColor.lightGrey,
-                    child: IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () {
-                        Navigator.pop(context,true);
-
-                      },
-                    ),
-                  ),
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      StreamBuilder(
-                          stream: fireStore
-                              .collection('users')
-                              .doc(widget.userMap['uid'])
-                              .snapshots(),
-                          builder: (context, snapshot) {
-                            if (!snapshot.hasData || snapshot.data == null) {
-                              return const SizedBox(); // or loading indicator
-                            }
-
-                            Timestamp? timestamp = snapshot.data!['last_seen'];
-
-                            DateTime? currentTime;
-                            if (timestamp != null) {
-                              currentTime = timestamp.toDate();
-                            } else {
-                              currentTime =
-                                  DateTime.now(); // fallback if time is missing
-                            }
-                            return Container(
-                              margin: const EdgeInsets.only(left: 10),
-                              alignment: Alignment.centerLeft,
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    widget.userMap['name'],
-                                    style: const TextStyle(
-                                        color: MyColor.black,
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w500),
-                                  ),
-                                  Text(
-                                    snapshot.data!['status'] == "online"
-                                        ? 'online'
-                                        : "last seen ${formatDateTime2(currentTime)}",
-                                    style: const TextStyle(color: MyColor.black),
-                                  ),
-                                ],
-                              ),
-                            );
-                          })
-                    ],
-                  )
-                ],
-              ),
-            ),
+            isTopContainer1Visible
+                ? topContainer1()
+                : topContainer2(),
+            // Container(
+            //   margin: const EdgeInsets.only(top: 35),
+            //   padding: const EdgeInsets.all(10),
+            //   color: MyColor.white,
+            //   child: Row(
+            //     children: [
+            //       CircleAvatar(
+            //         radius: 18,
+            //         backgroundColor: MyColor.lightGrey,
+            //         child: IconButton(
+            //           icon: const Icon(Icons.arrow_back, color: Colors.white),
+            //           onPressed: () {
+            //             Navigator.pop(context,true);
+            //
+            //           },
+            //         ),
+            //       ),
+            //       Column(
+            //         mainAxisAlignment: MainAxisAlignment.start,
+            //         children: [
+            //           StreamBuilder(
+            //               stream: fireStore
+            //                   .collection('users')
+            //                   .doc(widget.userMap['uid'])
+            //                   .snapshots(),
+            //               builder: (context, snapshot) {
+            //                 if (!snapshot.hasData || snapshot.data == null) {
+            //                   return const SizedBox(); // or loading indicator
+            //                 }
+            //
+            //                 Timestamp? timestamp = snapshot.data!['last_seen'];
+            //
+            //                 DateTime? currentTime;
+            //                 if (timestamp != null) {
+            //                   currentTime = timestamp.toDate();
+            //                 } else {
+            //                   currentTime =
+            //                       DateTime.now(); // fallback if time is missing
+            //                 }
+            //                 return Container(
+            //                   margin: const EdgeInsets.only(left: 10),
+            //                   alignment: Alignment.centerLeft,
+            //                   child: Column(
+            //                     mainAxisAlignment: MainAxisAlignment.start,
+            //                     crossAxisAlignment: CrossAxisAlignment.start,
+            //                     children: [
+            //                       Text(
+            //                         widget.userMap['name'],
+            //                         style: const TextStyle(
+            //                             color: MyColor.black,
+            //                             fontSize: 18,
+            //                             fontWeight: FontWeight.w500),
+            //                       ),
+            //                       Text(
+            //                         snapshot.data!['status'] == "online"
+            //                             ? 'online'
+            //                             : "last seen ${formatDateTime2(currentTime)}",
+            //                         style: const TextStyle(color: MyColor.black),
+            //                       ),
+            //                     ],
+            //                   ),
+            //                 );
+            //               })
+            //         ],
+            //       )
+            //     ],
+            //   ),
+            // ),
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance
@@ -260,63 +261,97 @@ class _ChatScreenState extends State<ChatScreen> {
                     itemCount: snapshot.data!.docs.length,
                     itemBuilder: (context, index) {
                       final data = snapshot.data!.docs[index].data()
-                          as Map<String, dynamic>;
-                      final preData = index > 0
+                      as Map<String, dynamic>;
+                      final preData = index > 0                               // chat date filtering
                           ? snapshot.data!.docs[index - 1].data()
-                              as Map<String, dynamic>
+                      as Map<String, dynamic>
                           : null;
 
                       var deleteText = "";
 
-                      if( data['senderName'] == auth.currentUser?.displayName){
+                      if (data['senderName'] == auth.currentUser?.displayName) {
                         deleteText = "You delete this message";
-                      }else{
+                      } else {
                         deleteText = "This message has been deleted";
                       }
 
                       List deletedFor = data['deletedFor'] ?? [];
-                      bool isDeletedForMe =
-                          deletedFor.contains(auth.currentUser!.uid);
-
+                      bool isDeletedForMe = deletedFor.contains(auth.currentUser!.uid);
                       var strDocId = snapshot.data!.docs[index].id;
 
+                      final isSelected = selectedMessageIds.contains(strDocId);
+
                       return GestureDetector(
+
                         onLongPress: () {
+                         setState(() {
+                           isSelectionMode = true;
+                           selectedMessageIds.add(strDocId);
+                           isTopContainer1Visible = false;
+                         });
 
-                          data['isDeleted']
-                          ?
-                          deletedChatRemoveConfirmDialog(context, "Confirmation!!!", "Are you sure you want to remove this",
-                                () {
-                              deleteChatForMe(
-                                  chatRoomId: widget.chatRoomId,
-                                  messageId: strDocId);
-                            },
-                          )
-                          :
 
-                          data['senderName'] == auth.currentUser?.displayName
-                              ?
-                          messageDeletedConfirmDialog(context, "Confirmation!!!",
-                              "Are you sure you want to delete ${data['message']}",
-                                  () {
-                                deleteChatForMe(
-                                    chatRoomId: widget.chatRoomId,
-                                    messageId: strDocId);
-                              }, () {
-                                deleteChatForEveryone(
-                                    chatRoomId: widget.chatRoomId,
-                                    messageId: strDocId);
-                              })
-                              :
-                          deleteForMeConfirmDialog(context, "Confirmation!!!", "Are you sure you want to delete ${data['message']}",
-                                  () {
-                                deleteChatForMe(
-                                    chatRoomId: widget.chatRoomId,
-                                    messageId: strDocId);
-                              },
-                          );
+
+                          // data['isDeleted']
+                          //     ?
+                          // deletedChatRemoveConfirmDialog(
+                          //   context, "Confirmation!!!",
+                          //   "Are you sure you want to remove this",
+                          //       () {
+                          //     deleteChatForMe(
+                          //         chatRoomId: widget.chatRoomId,
+                          //         messageId: strDocId);
+                          //   },
+                          // )
+                          //     :
+                          //
+                          // data['senderName'] == auth.currentUser?.displayName
+                          //     ?
+                          // messageDeletedConfirmDialog(
+                          //     context, "Confirmation!!!",
+                          //     "Are you sure you want to delete ${data['message']}",
+                          //         () {
+                          //       deleteChatForMe(
+                          //           chatRoomId: widget.chatRoomId,
+                          //           messageId: strDocId);
+                          //     }, () {
+                          //   deleteChatForEveryone(
+                          //       chatRoomId: widget.chatRoomId,
+                          //       messageId: strDocId);
+                          // })
+                          //     :
+                          // deleteForMeConfirmDialog(context, "Confirmation!!!",
+                          //   "Are you sure you want to delete ${data['message']}",
+                          //       () {
+                          //     deleteChatForMe(
+                          //         chatRoomId: widget.chatRoomId,
+                          //         messageId: strDocId);
+                          //   },
+                          // );
+
                         },
-                        child: messages(size, data, preData, isDeletedForMe, deleteText),
+                        onTap: (){
+                          if (isSelectionMode) {
+                            setState(() {
+                              if (isSelected) {
+                                selectedMessageIds.remove(strDocId);
+                              } else {
+                                selectedMessageIds.add(strDocId);
+                              }
+
+                              // Exit selection mode if nothing selected
+                              if (selectedMessageIds.isEmpty) {
+                                isSelectionMode = false;
+                                isTopContainer1Visible = true;
+                              }
+                            });
+                          } else {
+                            // Normal message tap
+                          }
+                        },
+                        child: messages(size, data, preData, isDeletedForMe,
+                            deleteText,isClicked: isSelected),
+
                       );
                     },
                   );
@@ -370,7 +405,127 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Widget messages(Size size, Map<String, dynamic> map, Map<String, dynamic>? previousMap, bool isDeletedForMe, String deleteText) {
+  Widget topContainer1() {
+    return Container(
+      margin: const EdgeInsets.only(top: 35),
+      padding: const EdgeInsets.all(10),
+      color: MyColor.white,
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 18,
+            backgroundColor: MyColor.lightGrey,
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () {
+                Navigator.pop(context, true);
+              },
+            ),
+          ),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              StreamBuilder(
+                  stream: fireStore
+                      .collection('users')
+                      .doc(widget.userMap['uid'])
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData || snapshot.data == null) {
+                      return const SizedBox(); // or loading indicator
+                    }
+
+                    Timestamp? timestamp = snapshot.data!['last_seen'];
+
+                    DateTime? currentTime;
+                    if (timestamp != null) {
+                      currentTime = timestamp.toDate();
+                    } else {
+                      currentTime =
+                          DateTime.now(); // fallback if time is missing
+                    }
+                    return Container(
+                      margin: const EdgeInsets.only(left: 10),
+                      alignment: Alignment.centerLeft,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.userMap['name'],
+                            style: const TextStyle(
+                                color: MyColor.black,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w500),
+                          ),
+                          Text(
+                            snapshot.data!['status'] == "online"
+                                ? 'online'
+                                : "last seen ${formatDateTime2(currentTime)}",
+                            style: const TextStyle(color: MyColor.black),
+                          ),
+                        ],
+                      ),
+                    );
+                  })
+            ],
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget topContainer2() {
+    return Container(
+      margin: const EdgeInsets.only(top: 35),
+      padding: const EdgeInsets.all(10),
+      color: MyColor.white,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: MyColor.lightGrey,
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () {
+                    setState(() {
+                      isTopContainer1Visible = true;
+                      selectedMessageIds.clear();
+                      ErrorHelper.showSnackBar(selectedMessageIds.toString(), context);
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(width: 10,),
+             if(selectedMessageIds.isNotEmpty)...[
+               Text(selectedMessageIds.length.toString(), style: const TextStyle(fontWeight: FontWeight.w500, color: MyColor.black, fontSize: 20),)
+             ]
+            ],
+          ),
+          Row(
+            children: [
+
+              if(selectedMessageIds.length == 1)...[
+                 IconButton(onPressed: (){}, icon: Image.asset("assets/images/reply.png", height: 22,width: 22,)),
+                const SizedBox(width: 8,),
+              ],
+
+              IconButton(onPressed: (){}, icon: Image.asset("assets/images/delete.png", height: 22,width: 22,)),
+              const SizedBox(width: 8,),
+              IconButton(onPressed: (){}, icon: Image.asset("assets/images/forward.png", height: 22,width: 22,)),
+              const SizedBox(width: 8,),
+              IconButton(onPressed: (){}, icon: Image.asset("assets/images/copy.png", height: 22,width: 22,)),
+            ],
+          )
+        ],
+      )
+    );
+  }
+
+  Widget messages(Size size, Map<String, dynamic> map, Map<String, dynamic>? previousMap, bool isDeletedForMe, String deleteText, { bool isClicked = false}) {
     //  DateTime currentTime = map['time'].toDate();
 
     Timestamp? timestamp = map['time'];
@@ -413,63 +568,70 @@ class _ChatScreenState extends State<ChatScreen> {
         //  chat ui
         if (!isDeletedForMe) ...[
           Container(
-            margin: map['senderName'] == auth.currentUser?.displayName
-                ? const EdgeInsets.only(left: 100)
-                : const EdgeInsets.only(right: 100),
-            alignment: map['senderName'] == auth.currentUser?.displayName
-                ? Alignment.centerRight
-                : Alignment.centerLeft,
+            color: isClicked?MyColor.lightGreen3:MyColor.transparent,
+            margin: const EdgeInsets.symmetric(vertical: 2),
             child: Container(
-                constraints: BoxConstraints(
-                  maxWidth: size.width * 0.7,
-                ),
-                decoration: BoxDecoration(
-                  color: map['senderName'] == auth.currentUser?.displayName
-                      ? MyColor.lightGreen
-                      : Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
-                margin: const EdgeInsets.all(5),
-                child: map['message'].toString().length < 30
-                    ? map['isDeleted']
-                        ?  Text(deleteText)
-                        : Row(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  map['message'],
-                                  style: const TextStyle(fontSize: 16),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                DateFormat('hh:mm a').format(currentTime),
-                                style: const TextStyle(fontSize: 10),
-                              ),
-                            ],
-                          )
-                    : map['isDeleted']
-                        ?  Text(deleteText)
-                        : Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                map['message'],
-                                style: const TextStyle(fontSize: 16),
-                              ),
-                              Text(
-                                DateFormat('hh:mm a').format(currentTime),
-                                style: const TextStyle(fontSize: 10),
-                              ),
-                            ],
-                          )),
+              margin: map['senderName'] == auth.currentUser?.displayName
+                  ? const EdgeInsets.only(left: 100)
+                  : const EdgeInsets.only(right: 100),
+              alignment: map['senderName'] == auth.currentUser?.displayName
+                  ? Alignment.centerRight
+                  : Alignment.centerLeft,
+              child: Container(
+                  constraints: BoxConstraints(
+                    maxWidth: size.width * 0.7,
+                  ),
+                  decoration: BoxDecoration(
+                    color: map['senderName'] == auth.currentUser?.displayName
+                        ? MyColor.lightGreen
+                        : Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
+                  margin: const EdgeInsets.all(5),
+                  child: map['message']
+                      .toString()
+                      .length < 30
+                      ? map['isDeleted']
+                      ? Text(deleteText)
+                      : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          map['message'],
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        DateFormat('hh:mm a').format(currentTime),
+                        style: const TextStyle(fontSize: 10),
+                      ),
+                    ],
+                  )
+                      : map['isDeleted']
+                      ? Text(deleteText)
+                      : Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        map['message'],
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                      Text(
+                        DateFormat('hh:mm a').format(currentTime),
+                        style: const TextStyle(fontSize: 10),
+                      ),
+                    ],
+                  )),
+            ),
           ),
         ]
       ],
     );
   }
+
 }

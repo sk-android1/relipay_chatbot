@@ -25,6 +25,7 @@ class MyColor{
   static const green = Color(0xFF1D9500);
   static const lightGreen = Color(0xFFCBFFD3);
   static const lightGreen2 = Color(0xFFDDFFE3);
+  static const lightGreen3 = Color(0xFFEFFFF3);
   static const green2 = Color(0xFF00C61F);
   static const readBack = Color(0xFFD1D1D1);
   static const unreadBack = Color(0xFFF4F4F4);
